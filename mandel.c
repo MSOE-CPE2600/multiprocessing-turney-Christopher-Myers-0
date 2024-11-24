@@ -10,16 +10,19 @@
 #include <stdio.h>
 #include <unistd.h>
 #include "jpegrw.h"
+#include "mandel.h"
 
 // local routines
+/*
 static int iteration_to_color( int i, int max );
 static int iterations_at_point( double x, double y, int max );
 static void compute_image( imgRawImage *img, double xmin, double xmax,
 									double ymin, double ymax, int max );
 static void show_help();
+*/
 
 
-int main( int argc, char *argv[] )
+/*int main( int argc, char *argv[] )
 {
 	char c;
 
@@ -90,7 +93,7 @@ int main( int argc, char *argv[] )
 	freeRawImage(img);
 
 	return 0;
-}
+}*/
 
 
 
