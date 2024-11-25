@@ -1,9 +1,10 @@
 /*******************************************************************************
 Filename: mandelmovie.c
 Name: Christopher Myers
-Course: CPE 2600
+Course: CPE 2600-121
+Assignment: Lab 11
 Date: 11/23/2024
-gcc -o mandelmovie.out mandelmovie.c mandel.c jpegrw.c -ljpeg -lm -g
+make or gcc -o mandelmovie.out mandelmovie.c mandel.c jpegrw.c -ljpeg -lm
 *******************************************************************************/
 
 #include <stdio.h>
@@ -34,13 +35,10 @@ int main( int argc, char *argv[] )
     // Create the number of processes from the command
     int imageIndex = 0;
     int pid = fork();
-    //int pids[NUM_PROCESSES];
-    //pids[0] = pid;
     for(int i = 1; i < NUM_PROCESSES; i++)
     {
         if(pid != 0) {
             pid = fork();
-            //pids[i] = pid;
             imageIndex = i;
         }
     }
@@ -76,7 +74,7 @@ int main( int argc, char *argv[] )
         {
             // Create output filename
             sprintf(outfile, "mandel%d.jpg", i);
-
+            // Compute the new image coordinates and scaling
             xcenter = -i*0.015;
             ycenter = i*0.015;
             xscale = 4*pow(0.95, i);
@@ -84,7 +82,7 @@ int main( int argc, char *argv[] )
             yscale = xscale / image_width * image_height;
 
             // Display the configuration of the image.
-            //printf("mandel: x=%lf y=%lf xscale=%lf yscale=%1f max=%d outfile=%s\n",xcenter,ycenter,xscale,yscale,max,outfile);
+            printf("mandel: x=%lf y=%lf xscale=%lf yscale=%1f max=%d outfile=%s\n",xcenter,ycenter,xscale,yscale,max,outfile);
 
             // Create a raw image of the appropriate size.
             imgRawImage* img = initRawImage(image_width,image_height);
@@ -102,7 +100,7 @@ int main( int argc, char *argv[] )
             freeRawImage(img);
         }
     }
-
+    // If parent process, wait for all children to be done
     if(pid != 0) {
         for(int i = 0; i < NUM_PROCESSES; i++) {
             wait(NULL);
