@@ -11,6 +11,7 @@
 #include <unistd.h>
 #include "jpegrw.h"
 #include "mandel.h"
+#include "compute_image_struct.h"
 
 // local routines
 /*
@@ -129,18 +130,42 @@ Compute an entire Mandelbrot image, writing each point to the given bitmap.
 Scale the image to the range (xmin-xmax,ymin-ymax), limiting iterations to "max"
 */
 
-void compute_image(imgRawImage* img, double xmin, double xmax, double ymin, double ymax, int max )
+void * compute_image(void *arg)
 {
-	int i,j;
+	compute_image_struct compute_image_data = *((compute_image_struct *)arg);
+
+	// Collect data from compute_image_data for easy use
+	imgRawImage* img = compute_image_data.img;
+	double xmin = compute_image_data.xmin;
+	double xmax = compute_image_data.xmax;
+	double ymin = compute_image_data.ymin;
+	double ymax = compute_image_data.ymax;
+	double max = compute_image_data.max;
+	const int thread_index = compute_image_data.thread_index;
+	const int NUM_THREADS = compute_image_data.NUM_THREADS;
 
 	int width = img->width;
 	int height = img->height;
 
+	int rowStart;
+	int rowEnd;
+	double rowStartDouble = thread_index*height/NUM_THREADS;
+	double rowEndDouble = (thread_index + 1)*height/NUM_THREADS;
+	if(rowStartDouble < 0) {
+		rowStart = (int)(rowStartDouble - 0.5);
+	} else {
+		rowStart = (int)(rowStartDouble + 0.5);
+	}
+	if(rowEndDouble < 0) {
+		rowEnd = (int)(rowEndDouble - 0.5);
+	} else {
+		rowEnd = (int)(rowEndDouble + 0.5);
+	}
 	// For every pixel in the image...
 
-	for(j=0;j<height;j++) {
+	for(int j = rowStart; j < rowEnd; j++) {
 
-		for(i=0;i<width;i++) {
+		for(int i = 0; i < width; i++) {
 
 			// Determine the point in x,y space for that pixel.
 			double x = xmin + i*(xmax-xmin)/width;
@@ -153,6 +178,7 @@ void compute_image(imgRawImage* img, double xmin, double xmax, double ymin, doub
 			setPixelCOLOR(img,i,j,iteration_to_color(iters,max));
 		}
 	}
+	return NULL;
 }
 
 

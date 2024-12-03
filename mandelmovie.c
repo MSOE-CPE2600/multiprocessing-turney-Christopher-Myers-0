@@ -12,23 +12,28 @@ make or gcc -o mandelmovie.out mandelmovie.c mandel.c jpegrw.c -ljpeg -lm
 #include <unistd.h>
 #include <sys/wait.h>
 #include <math.h>
+#include <pthread.h>
 #include "jpegrw.h"
 #include "mandel.h"
+#include "compute_image_struct.h"
 
 
 int main( int argc, char *argv[] )
 {
 
-    // Get the number of processes from the command argument
+    // Get the arguments from the command
     char opt;
     int NUM_PROCESSES = 1;
+    int NUM_THREADS = 1;
 
-    while((opt = getopt(argc, argv, "n:")) != -1)
+    while((opt = getopt(argc, argv, "n:t:")) != -1)
     {
         switch(opt) {
             case 'n':
                 NUM_PROCESSES = strtol(optarg, NULL, 10);
                 break;
+            case 't':
+                NUM_THREADS = strtol(optarg, NULL, 10);
         }
     }
 
@@ -69,11 +74,11 @@ int main( int argc, char *argv[] )
         } else {
             endImage = (int)(endImageDouble + 0.5);
         }
-        //printf("PID: %d startImage: %d endImage: %d\n", getpid(), startImage, endImage);
+        printf("PID: %d startImage: %d endImage: %d\n", getpid(), startImage, endImage);
         for(int i = startImage; i < endImage; i++)
         {
             // Create output filename
-            sprintf(outfile, "mandel%d.jpg", i);
+            sprintf(outfile, "mandel%02d.jpg", i);
             // Compute the new image coordinates and scaling
             xcenter = -i*0.015;
             ycenter = i*0.015;
@@ -90,8 +95,26 @@ int main( int argc, char *argv[] )
             // Fill it with a black
             setImageCOLOR(img,0);
 
-            // Compute the Mandelbrot image
-            compute_image(img,xcenter-xscale/2,xcenter+xscale/2,ycenter-yscale/2,ycenter+yscale/2,max);
+            pthread_t threads[32];
+            // Compute the Mandelbrot image by splitting image into threads
+            for(int thread_index = 0; thread_index < NUM_THREADS; thread_index++)
+            {
+                compute_image_struct compute_image_data = {
+                .img = img,
+                .xmin = xcenter-xscale/2,
+                .xmax = xcenter+xscale/2,
+                .ymin = ycenter-yscale/2,
+                .ymax = ycenter+yscale/2,
+                .max = max,
+                .thread_index = thread_index,
+                .NUM_THREADS = NUM_THREADS
+                };
+                pthread_create(&threads[thread_index], NULL, compute_image, &compute_image_data);
+            }
+            for(int thread_index = 0; thread_index < NUM_THREADS; thread_index++)
+            {
+                pthread_join(threads[thread_index], NULL);
+            }
 
             // Save the image in the stated file.
             storeJpegImageFile(img,outfile);
