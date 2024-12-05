@@ -4,7 +4,7 @@ Name: Christopher Myers
 Course: CPE 2600-121
 Assignment: Lab 11
 Date: 11/23/2024
-make or gcc -o mandelmovie.out mandelmovie.c mandel.c jpegrw.c -ljpeg -lm
+make or gcc -o mandelmovie.out mandelmovie.c mandel.c jpegrw.c -ljpeg -lm -lpthread
 *******************************************************************************/
 
 #include <stdio.h>
@@ -95,16 +95,19 @@ int main( int argc, char *argv[] )
             // Fill it with a black
             setImageCOLOR(img,0);
 
+            // Array to store thread ids
             const int THREAD_MAX = 20;
             pthread_t threads[THREAD_MAX];
             if(NUM_THREADS > THREAD_MAX) {
                 printf("Thread count exceeded, limiting to %d threads\n", THREAD_MAX);
+                NUM_THREADS = THREAD_MAX;
             }
             // Compute the Mandelbrot image by splitting image into threads
             for(int thread_index = 0;
-                thread_index < NUM_THREADS && thread_index < THREAD_MAX;
+                thread_index < NUM_THREADS;
                 thread_index++)
             {
+                // Prepare data to pass into the thread method
                 compute_image_struct *compute_image_data = malloc(sizeof(compute_image_struct));
                 if(compute_image_data == NULL) {
                     perror("malloc failed");
@@ -119,14 +122,17 @@ int main( int argc, char *argv[] )
                 compute_image_data->thread_index = thread_index;
                 compute_image_data->NUM_THREADS = NUM_THREADS;
                 //printf("%d\n", compute_image_data.thread_index);
+
+                // Create the thread and check for errors
                 if(pthread_create(&threads[thread_index], NULL, compute_image, compute_image_data) != 0) {
                     perror("pthread_create failed");
                     free(compute_image_data);
                     exit(1);
                 }
             }
+            // Join the threads back
             for(int thread_index = 0;
-                thread_index < NUM_THREADS && thread_index < THREAD_MAX;
+                thread_index < NUM_THREADS;
                 thread_index++)
             {
                 pthread_join(threads[thread_index], NULL);

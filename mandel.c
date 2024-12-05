@@ -1,3 +1,11 @@
+/*******************************************************************************
+Filename: mandel.c
+Edited By: Christopher Myers
+Course: CPE 2600-121
+Assignment: Lab 12
+Date: 12/4/2024
+make or gcc -o mandelmovie.out mandelmovie.c mandel.c jpegrw.c -ljpeg -lm -lpthread
+*******************************************************************************/
 /// 
 //  mandel.c
 //  Based on example code found here:
@@ -143,12 +151,13 @@ void * compute_image(void *arg)
 	double max = compute_image_data.max;
 	int thread_index = compute_image_data.thread_index;
 	int NUM_THREADS = compute_image_data.NUM_THREADS;
-	free(arg);
+	free(arg); // free the arg pointer malloced prior to the thread creation
 	//printf("&compute_image_data %p: thread_index %d\n", &compute_image_data, thread_index);
 
 	int width = img->width;
 	int height = img->height;
 
+	// Calculate the chunk of rows for the thread to generate
 	int rowStart;
 	int rowEnd;
 	double rowStartDouble = thread_index*height/NUM_THREADS;
@@ -164,8 +173,7 @@ void * compute_image(void *arg)
 		rowEnd = (int)(rowEndDouble + 0.5);
 	}
 	//printf("thread_index %d: rowStart %d: rowEnd %d: rowStartDouble %f: rowEndDouble %f\n", thread_index, rowStart, rowEnd, rowStartDouble, rowEndDouble);
-	// For every pixel in the image...
-
+	// For every pixel in the chunk of rows...
 	for(int j = rowStart; j < rowEnd; j++) {
 
 		for(int i = 0; i < width; i++) {
