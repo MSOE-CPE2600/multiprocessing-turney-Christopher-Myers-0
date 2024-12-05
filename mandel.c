@@ -141,8 +141,10 @@ void * compute_image(void *arg)
 	double ymin = compute_image_data.ymin;
 	double ymax = compute_image_data.ymax;
 	double max = compute_image_data.max;
-	const int thread_index = compute_image_data.thread_index;
-	const int NUM_THREADS = compute_image_data.NUM_THREADS;
+	int thread_index = compute_image_data.thread_index;
+	int NUM_THREADS = compute_image_data.NUM_THREADS;
+	free(arg);
+	//printf("&compute_image_data %p: thread_index %d\n", &compute_image_data, thread_index);
 
 	int width = img->width;
 	int height = img->height;
@@ -161,6 +163,7 @@ void * compute_image(void *arg)
 	} else {
 		rowEnd = (int)(rowEndDouble + 0.5);
 	}
+	//printf("thread_index %d: rowStart %d: rowEnd %d: rowStartDouble %f: rowEndDouble %f\n", thread_index, rowStart, rowEnd, rowStartDouble, rowEndDouble);
 	// For every pixel in the image...
 
 	for(int j = rowStart; j < rowEnd; j++) {

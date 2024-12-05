@@ -9,8 +9,8 @@ typedef struct
     double ymin;
     double ymax;
     int max;
-    const int thread_index;
-    const int NUM_THREADS;
+    int thread_index;
+    int NUM_THREADS;
 } compute_image_struct;
 
 #endif

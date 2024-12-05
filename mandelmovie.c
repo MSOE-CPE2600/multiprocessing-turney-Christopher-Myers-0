@@ -74,11 +74,11 @@ int main( int argc, char *argv[] )
         } else {
             endImage = (int)(endImageDouble + 0.5);
         }
-        printf("PID: %d startImage: %d endImage: %d\n", getpid(), startImage, endImage);
+        //printf("PID: %d startImage: %d endImage: %d\n", getpid(), startImage, endImage);
         for(int i = startImage; i < endImage; i++)
         {
             // Create output filename
-            sprintf(outfile, "mandel%02d.jpg", i);
+            sprintf(outfile, "mandel%d.jpg", i);
             // Compute the new image coordinates and scaling
             xcenter = -i*0.015;
             ycenter = i*0.015;
@@ -95,23 +95,39 @@ int main( int argc, char *argv[] )
             // Fill it with a black
             setImageCOLOR(img,0);
 
-            pthread_t threads[32];
-            // Compute the Mandelbrot image by splitting image into threads
-            for(int thread_index = 0; thread_index < NUM_THREADS; thread_index++)
-            {
-                compute_image_struct compute_image_data = {
-                .img = img,
-                .xmin = xcenter-xscale/2,
-                .xmax = xcenter+xscale/2,
-                .ymin = ycenter-yscale/2,
-                .ymax = ycenter+yscale/2,
-                .max = max,
-                .thread_index = thread_index,
-                .NUM_THREADS = NUM_THREADS
-                };
-                pthread_create(&threads[thread_index], NULL, compute_image, &compute_image_data);
+            const int THREAD_MAX = 20;
+            pthread_t threads[THREAD_MAX];
+            if(NUM_THREADS > THREAD_MAX) {
+                printf("Thread count exceeded, limiting to %d threads\n", THREAD_MAX);
             }
-            for(int thread_index = 0; thread_index < NUM_THREADS; thread_index++)
+            // Compute the Mandelbrot image by splitting image into threads
+            for(int thread_index = 0;
+                thread_index < NUM_THREADS && thread_index < THREAD_MAX;
+                thread_index++)
+            {
+                compute_image_struct *compute_image_data = malloc(sizeof(compute_image_struct));
+                if(compute_image_data == NULL) {
+                    perror("malloc failed");
+                    exit(1);
+                }
+                compute_image_data->img = img;
+                compute_image_data->xmin = xcenter-xscale/2;
+                compute_image_data->xmax = xcenter+xscale/2;
+                compute_image_data->ymin = ycenter-yscale/2;
+                compute_image_data->ymax = ycenter+yscale/2;
+                compute_image_data->max = max;
+                compute_image_data->thread_index = thread_index;
+                compute_image_data->NUM_THREADS = NUM_THREADS;
+                //printf("%d\n", compute_image_data.thread_index);
+                if(pthread_create(&threads[thread_index], NULL, compute_image, compute_image_data) != 0) {
+                    perror("pthread_create failed");
+                    free(compute_image_data);
+                    exit(1);
+                }
+            }
+            for(int thread_index = 0;
+                thread_index < NUM_THREADS && thread_index < THREAD_MAX;
+                thread_index++)
             {
                 pthread_join(threads[thread_index], NULL);
             }
